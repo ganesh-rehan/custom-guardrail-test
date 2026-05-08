@@ -23,20 +23,79 @@ def _mask_after_keyword(text: str, keyword: str, mask_char: str = DEFAULT_MASK_C
 
 def poison_tail_mutate(request: InputGuardrailRequest) -> Dict[str, Any]:
     """
-    Mutate input request:
-    For each user message, if it contains the keyword (default: "poison"),
-    mask everything after that keyword with '*' characters.
+    Mutate request body when used as input guardrail.
+    Mutate response body when used as output guardrail.
 
-    Returns a custom-guardrail mutate contract:
-      - transformed=True only when a mutation is actually applied
-      - result=<mutated request body>
+    Rule:
+    - If text contains keyword (default: 'poison'), mask everything after it with '*'.
     """
     keyword = (request.config or {}).get("keyword", DEFAULT_KEYWORD)
     mask_char = (request.config or {}).get("mask_char", DEFAULT_MASK_CHAR)
 
-    req_body: Dict[str, Any] = deepcopy(request.requestBody or {})
-    messages: List[Dict[str, Any]] = req_body.get("messages", [])
+    # Detect whether this is output-guardrail payload
+    raw_response_body = getattr(request, "responseBody", None)
+    is_output_guardrail = raw_response_body is not None
 
+    if is_output_guardrail:
+        target_body: Dict[str, Any] = deepcopy(raw_response_body or {})
+        target_label = "responseBody"
+
+        # OpenAI-style response content location
+        # response.choices[i].message.content
+        choices = target_body.get("choices", [])
+        mutated = False
+        mutated_choice_indices: List[int] = []
+
+        for i, choice in enumerate(choices):
+            message = choice.get("message", {}) if isinstance(choice, dict) else {}
+            content = message.get("content")
+
+            if isinstance(content, str):
+                new_content, changed = _mask_after_keyword(content, keyword, mask_char)
+                if changed:
+                    message["content"] = new_content
+                    choice["message"] = message
+                    mutated = True
+                    mutated_choice_indices.append(i)
+                continue
+
+            # Optional multimodal response support
+            if isinstance(content, list):
+                changed_any_part = False
+                for part in content:
+                    if not isinstance(part, dict):
+                        continue
+                    if part.get("type") == "text" and isinstance(part.get("text"), str):
+                        new_text, changed = _mask_after_keyword(part["text"], keyword, mask_char)
+                        if changed:
+                            part["text"] = new_text
+                            changed_any_part = True
+                if changed_any_part:
+                    message["content"] = content
+                    choice["message"] = message
+                    mutated = True
+                    mutated_choice_indices.append(i)
+
+        target_body["choices"] = choices
+
+        return {
+            "verdict": True,
+            "transformed": mutated,
+            "result": target_body,
+            "message": "Poison tail masked in response" if mutated else "No poison keyword found in response",
+            "details": {
+                "keyword": keyword,
+                "mutated": mutated,
+                "target": target_label,
+                "mutated_choice_indices": mutated_choice_indices,
+            },
+        }
+
+    # Input guardrail path -> mutate requestBody
+    target_body = deepcopy(request.requestBody or {})
+    target_label = "requestBody"
+
+    messages: List[Dict[str, Any]] = target_body.get("messages", [])
     mutated = False
     mutated_message_indices: List[int] = []
 
@@ -46,7 +105,6 @@ def poison_tail_mutate(request: InputGuardrailRequest) -> Dict[str, Any]:
 
         content = msg.get("content")
 
-        # Standard text content
         if isinstance(content, str):
             new_content, changed = _mask_after_keyword(content, keyword, mask_char)
             if changed:
@@ -55,7 +113,7 @@ def poison_tail_mutate(request: InputGuardrailRequest) -> Dict[str, Any]:
                 mutated_message_indices.append(i)
             continue
 
-        # Multimodal content array support (OpenAI-style parts)
+        # Optional multimodal user content support
         if isinstance(content, list):
             changed_any_part = False
             for part in content:
@@ -67,17 +125,21 @@ def poison_tail_mutate(request: InputGuardrailRequest) -> Dict[str, Any]:
                         part["text"] = new_text
                         changed_any_part = True
             if changed_any_part:
+                msg["content"] = content
                 mutated = True
                 mutated_message_indices.append(i)
+
+    target_body["messages"] = messages
 
     return {
         "verdict": True,
         "transformed": mutated,
-        "result": req_body,
-        "message": "Poison tail masked" if mutated else "No poison keyword found",
+        "result": target_body,
+        "message": "Poison tail masked in request" if mutated else "No poison keyword found in request",
         "details": {
             "keyword": keyword,
             "mutated": mutated,
+            "target": target_label,
             "mutated_message_indices": mutated_message_indices,
         },
     }
