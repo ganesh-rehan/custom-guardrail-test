@@ -4,7 +4,7 @@ uvicorn[standard]>=0.30.0,<1
 pydantic>=2.8.0,<3
 
 # --- Guardrails AI ---
-guardrails-ai==0.5.10
+guardrails-ai @ git+https://github.com/guardrails-ai/guardrails.git@0.5.10
 
 # --- Presidio (PII redaction) + NLP runtime ---
 presidio-analyzer>=2.2.0
