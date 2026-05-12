@@ -1,6 +1,22 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
+
 from pydantic import BaseModel
+
+
+class ValidateGuardrailResponse(BaseModel):
+    """Response body for validate-operation guardrails (AI Gateway JSON contract)."""
+
+    verdict: bool
+    message: Optional[str] = None
+
+
+class MutateGuardrailResponse(BaseModel):
+    """Response body for mutate-operation guardrails (AI Gateway JSON contract)."""
+
+    verdict: bool
+    transformed: bool
+    result: dict[str, Any]
 
 
 class SubjectType(str, Enum):

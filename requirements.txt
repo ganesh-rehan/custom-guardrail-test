@@ -1,3 +1,19 @@
-fastapi==0.115.0
-uvicorn==0.30.6
-pydantic==2.8.2
+# --- HTTP server ---
+fastapi>=0.115.0,<1
+uvicorn[standard]>=0.30.0,<1
+pydantic>=2.8.0,<3
+
+# --- Guardrails AI (import: guardrails) + hub validators (see post-install notes) ---
+guardrails-ai>=0.5.0
+
+# --- Presidio (PII redaction) + NLP runtime ---
+presidio-analyzer>=2.2.0
+presidio-anonymizer>=2.2.0
+spacy>=3.7.0,<4
+
+# --- NSFW local classifier ---
+transformers>=4.41.0
+torch>=2.2.0
+
+# --- Optional: matches template; useful if you add OpenAI-shaped typing/helpers ---
+openai>=1.30.0,<2
