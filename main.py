@@ -51,20 +51,3 @@ def nsfw_filtering_endpoint(request: OutputGuardrailRequest):
     """Output validate — local NSFW classifier."""
     return nsfw_filtering(request)
 
-
-@app.post("/drug-mention")
-def drug_mention_endpoint(request: OutputGuardrailRequest):
-    """Output validate — Guardrails AI drug mention."""
-    return drug_mention(request)
-
-
-@app.post("/web-sanitization")
-def web_sanitization_endpoint(request: InputGuardrailRequest):
-    """Input validate — Guardrails AI web sanitization."""
-    return web_sanitization(request)
-
-
-@app.post("/pii-detection")
-def pii_detection_endpoint(request: InputGuardrailRequest):
-    """Input validate — Guardrails AI PII detection."""
-    return pii_detection_guardrails_ai(request)
