@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from entities import InputGuardrailRequest, OutputGuardrailRequest
 from guardrail.keyword_block import keyword_block
 from guardrail.nsfw_filtering_local_eval import nsfw_filtering
-from guardrail.pii_redaction_presidio import process_input_guardrail
 from guardrail.poison_tail_mutate import poison_tail_mutate
 
 app = FastAPI(
