@@ -3,8 +3,8 @@ fastapi>=0.115.0,<1
 uvicorn[standard]>=0.30.0,<1
 pydantic>=2.8.0,<3
 
-# --- Guardrails AI (import: guardrails) + hub validators (see post-install notes) ---
-guardrails-ai>=0.5.0
+# --- Guardrails AI ---
+guardrails-ai==0.5.10
 
 # --- Presidio (PII redaction) + NLP runtime ---
 presidio-analyzer>=2.2.0
@@ -15,5 +15,5 @@ spacy>=3.7.0,<4
 transformers>=4.41.0
 torch>=2.2.0
 
-# --- Optional: matches template; useful if you add OpenAI-shaped typing/helpers ---
+# --- Optional: OpenAI-shaped typing/helpers ---
 openai>=1.30.0,<2
